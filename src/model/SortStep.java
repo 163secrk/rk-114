@@ -9,7 +9,10 @@ public class SortStep {
         COMPARE_AND_SWAP,
         PLACE_SORTED,
         COMPLETE,
-        INIT
+        INIT,
+        PIVOT_SELECT,
+        PARTITION_START,
+        PARTITION_END
     }
 
     private final int[] array;
@@ -19,8 +22,16 @@ public class SortStep {
     private final String description;
     private final int comparisons;
     private final int swaps;
+    private final int pivotIndex;
+    private final int leftBound;
+    private final int rightBound;
 
     public SortStep(int[] array, StepType type, int index1, int index2, String description, int comparisons, int swaps) {
+        this(array, type, index1, index2, description, comparisons, swaps, -1, -1, -1);
+    }
+
+    public SortStep(int[] array, StepType type, int index1, int index2, String description,
+                    int comparisons, int swaps, int pivotIndex, int leftBound, int rightBound) {
         this.array = Arrays.copyOf(array, array.length);
         this.type = type;
         this.index1 = index1;
@@ -28,6 +39,9 @@ public class SortStep {
         this.description = description;
         this.comparisons = comparisons;
         this.swaps = swaps;
+        this.pivotIndex = pivotIndex;
+        this.leftBound = leftBound;
+        this.rightBound = rightBound;
     }
 
     public int[] getArray() {
@@ -56,5 +70,17 @@ public class SortStep {
 
     public int getSwaps() {
         return swaps;
+    }
+
+    public int getPivotIndex() {
+        return pivotIndex;
+    }
+
+    public int getLeftBound() {
+        return leftBound;
+    }
+
+    public int getRightBound() {
+        return rightBound;
     }
 }

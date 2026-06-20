@@ -2,6 +2,7 @@ package ui;
 
 import algorithm.SortAlgorithm;
 import algorithm.BubbleSort;
+import algorithm.QuickSort;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -21,6 +22,7 @@ public class AlgorithmListPanel extends JPanel {
     public AlgorithmListPanel() {
         this.algorithms = new ArrayList<>();
         this.algorithms.add(new BubbleSort());
+        this.algorithms.add(new QuickSort());
         this.selectedAlgorithm = algorithms.get(0);
 
         setLayout(new BorderLayout(0, 12));

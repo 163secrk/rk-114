@@ -23,8 +23,16 @@ public class SortCanvas extends JPanel {
     private static final Color COLOR_SWAP = new Color(186, 85, 211);
     private static final Color COLOR_SORTED = new Color(60, 179, 113);
     private static final Color COLOR_PENDING_SORT = new Color(70, 130, 180);
+    private static final Color COLOR_PIVOT = new Color(255, 215, 0);
     private static final Color COLOR_BACKGROUND = new Color(245, 247, 250);
     private static final Color COLOR_DESCRIPTION_BG = new Color(255, 255, 255, 230);
+    private static final Color[] PARTITION_COLORS = {
+            new Color(255, 235, 205, 120),
+            new Color(220, 235, 255, 120),
+            new Color(220, 255, 230, 120),
+            new Color(255, 220, 235, 120),
+            new Color(240, 230, 255, 120)
+    };
 
     public SortCanvas() {
         this.currentStep = null;
@@ -47,8 +55,10 @@ public class SortCanvas extends JPanel {
                     completionAnimateIndex = step.getIndex1();
                     completionAnimateStartTime = System.currentTimeMillis();
                 }
-            } else if (step.getType() == StepType.INIT) {
-                sortedIndices.clear();
+            } else if (step.getType() == StepType.INIT || step.getType() == StepType.PARTITION_START) {
+                if (step.getType() == StepType.INIT) {
+                    sortedIndices.clear();
+                }
                 completionAnimateIndex = -1;
             }
         }
@@ -105,6 +115,9 @@ public class SortCanvas extends JPanel {
         double barTotalWidth = (double) chartWidth / n;
         double barWidth = Math.max(barTotalWidth * 0.75, 4);
         double gap = barTotalWidth - barWidth;
+
+        paintPartitionBackground(g2d, leftPadding, topPadding, chartWidth, chartHeight,
+                barTotalWidth, n);
 
         g2d.setColor(new Color(220, 220, 230));
         g2d.setStroke(new BasicStroke(1));
@@ -185,6 +198,18 @@ public class SortCanvas extends JPanel {
                 titleColor = COLOR_SORTED;
                 titleText = "✅ 完成步骤";
                 break;
+            case PIVOT_SELECT:
+                titleColor = COLOR_PIVOT;
+                titleText = "⭐ 选择基准";
+                break;
+            case PARTITION_START:
+                titleColor = new Color(100, 149, 237);
+                titleText = "📦 分区开始";
+                break;
+            case PARTITION_END:
+                titleColor = new Color(60, 179, 113);
+                titleText = "📦 分区完成";
+                break;
             default:
                 titleColor = new Color(80, 100, 130);
                 titleText = "📋 操作说明";
@@ -245,9 +270,15 @@ public class SortCanvas extends JPanel {
         StepType type = currentStep.getType();
         int i1 = currentStep.getIndex1();
         int i2 = currentStep.getIndex2();
+        int pivotIdx = currentStep.getPivotIndex();
 
-        if (sortedIndices.contains(index) && type != StepType.COMPARE && type != StepType.SWAP) {
+        if (sortedIndices.contains(index) && type != StepType.COMPARE && type != StepType.SWAP
+                && type != StepType.PIVOT_SELECT) {
             return COLOR_SORTED;
+        }
+
+        if (pivotIdx >= 0 && index == pivotIdx) {
+            return COLOR_PIVOT;
         }
 
         switch (type) {
@@ -260,6 +291,9 @@ public class SortCanvas extends JPanel {
                 break;
             case PLACE_SORTED:
                 if (index == i1) return COLOR_PENDING_SORT;
+                break;
+            case PIVOT_SELECT:
+                if (index == i1) return COLOR_PIVOT;
                 break;
             case COMPLETE:
                 if (sortedIndices.contains(index)) return COLOR_SORTED;
@@ -275,13 +309,37 @@ public class SortCanvas extends JPanel {
 
     private boolean isHighlighted(int index) {
         StepType type = currentStep.getType();
+        int pivotIdx = currentStep.getPivotIndex();
+        if (pivotIdx >= 0 && index == pivotIdx) {
+            return true;
+        }
         if (type == StepType.COMPARE || type == StepType.SWAP) {
             return index == currentStep.getIndex1() || index == currentStep.getIndex2();
         }
-        if (type == StepType.PLACE_SORTED) {
+        if (type == StepType.PLACE_SORTED || type == StepType.PIVOT_SELECT) {
             return index == currentStep.getIndex1();
         }
         return false;
+    }
+
+    private void paintPartitionBackground(Graphics2D g2d, int leftPadding, int topPadding,
+                                          int chartWidth, int chartHeight,
+                                          double barTotalWidth, int n) {
+        int leftBound = currentStep.getLeftBound();
+        int rightBound = currentStep.getRightBound();
+
+        if (leftBound >= 0 && rightBound >= 0 && leftBound <= rightBound) {
+            double x = leftPadding + leftBound * barTotalWidth;
+            double width = (rightBound - leftBound + 1) * barTotalWidth;
+            int colorIdx = Math.abs(leftBound + rightBound) % PARTITION_COLORS.length;
+            Color partitionColor = PARTITION_COLORS[colorIdx];
+            g2d.setColor(partitionColor);
+            g2d.fillRoundRect((int) x, topPadding - 5, (int) width, chartHeight + 10, 8, 8);
+
+            g2d.setColor(new Color(180, 180, 200, 150));
+            g2d.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2d.drawRoundRect((int) x, topPadding - 5, (int) width, chartHeight + 10, 8, 8);
+        }
     }
 
     private Color lighter(Color c, int amount) {
